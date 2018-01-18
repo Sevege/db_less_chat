@@ -1,0 +1,73 @@
+<!doctype html>
+<head>
+    <title>Chat</title>
+</head>
+<body>
+    <input type='text' id='by' placeholder='Choose nick, press enter' />
+    <div id='chat' style='display: none'>
+        <span id='nick'></span>:&nbsp;
+        <input type='text' id='said' placeholder='type something, press enter'/>
+        <div id='room'></div>
+    </div>
+    <script>
+        let room = document.getElementById('room');
+        let said = document.getElementById('said');
+        let by = document.getElementById('by');
+        let nick = document.getElementById('nick');
+        let chat = document.getElementById('chat');
+        let xhr = new XMLHttpRequest();
+
+        function formatParams( params )
+        {
+            // https://stackoverflow.com/a/31713191
+            return "?" + Object
+                .keys(params)
+                .map(function(key)
+                {
+                    return key+"="+encodeURIComponent(params[key])
+                })
+                .join("&")
+        }
+
+        said.addEventListener('keypress', (event) =>
+        {
+            console.log('fired', event.keyCode);
+            if(event.keyCode === 13)
+            {
+                console.log(`/?by=${by.value || 'anon'}&said=${said.value}`);
+                xhr.open
+                (
+                    'GET',
+                    '/' + formatParams({ by : by.value || 'anon', said: said.value}),
+                    true
+                );
+                xhr.send();
+                said.value = '';
+                return true;
+            }
+        });
+
+        by.addEventListener('keyup', (event) =>
+        {
+            if(event.keyCode === 13)
+            {
+                by.setAttribute('disabled', 'true');
+                by.setAttribute('type', 'hidden');
+                nick.innerHTML = by.value || 'anon';
+                chat.removeAttribute('style');
+            }
+        });
+
+        (new EventSource('data')).onmessage = function(event)
+        {
+            let data = JSON.parse(event.data);
+            let b = document.createElement('b');
+            b.innerHTML = data.by;
+            let p = document.createElement('p');
+            let t = document.createTextNode(': ' + data.said);
+            p.appendChild(b);
+            p.appendChild(t);
+            room.insertBefore(p, room.firstChild);
+        };
+    </script>
+</body>
