@@ -1,21 +1,20 @@
-const app = require('express')();
-let path = require('path');
+const app  = require('express')();
+const path = require('path');
 
 let chat = new (require('events'))();
 
 let index = {}; index.html = path.join(__dirname, 'index.html');
 
-global.max_emit = 0;
-// TODO: use db/hashmap or something similar where closed
-// connections can be easily removed
+global.max_emit = 0; // TOFIX: can run out if server runs too long with too many user
+global.num_of_current_user = 0;
 
 chat.on('someone-said-something', (by, said) =>
 {
-    console.log(global.max_emit);
-    for(let i = 1; i <= global.max_emit; ++i)
-    {
-        chat.emit(String(i), by, said);
-    }
+    global.num_of_current_user = 0;
+
+    for(let i = 1; i <= global.max_emit; ++i) chat.emit(String(i), by, said);
+
+    console.info('Current number of user:', global.num_of_current_user);
 });
 
 app.get('/', (req, res) =>
@@ -37,19 +36,15 @@ app.get('/data', (req, res) =>
     res.header('Cache-Control', 'no-cache');
 
     let event_name = String(++global.max_emit);
-    chat.on(event_name, (by, said) =>
-    {
-        res.write(`data: ${JSON.stringify({ said: said, by : by })}\n\n`);
-    });
 
-    // TOFIX: event listener not being removed
-    res.on('finish', () =>
+    let event_listener = (by, said) =>
     {
-        chat.removeListener(event_name, (by, said) =>
-        {
-            res.write(`data: ${JSON.stringify({ said: said, by : by })}\n\n`);
-        });
-    });
+        ++global.num_of_current_user;
+        res.write(`data: ${JSON.stringify({ said: said, by : by })}\n\n`);
+    }
+
+    chat.on(event_name, event_listener);
+    res.on('close', () => chat.removeListener(event_name, event_listener));
 });
 
 const server = app.listen(process.env.PORT || '9001', () =>
