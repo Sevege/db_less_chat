@@ -31,10 +31,8 @@
 
         said.addEventListener('keypress', (event) =>
         {
-            console.log('fired', event.keyCode);
             if(event.keyCode === 13)
             {
-                console.log(`/?by=${by.value || 'anon'}&said=${said.value}`);
                 xhr.open
                 (
                     'GET',
