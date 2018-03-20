@@ -10,19 +10,26 @@ global.max_emit = 0; // TOFIX: can run out if server runs too long with too many
 chat.on('someone-said-something', (by, said) =>
 {
     for(let i = 1; i <= global.max_emit; ++i) chat.emit(String(i), by, said);
-    // console.info('Current number of user:', chat.eventNames().length - 1);
 });
 
 app.get('/', (req, res) =>
 {
     if(typeof req.query.said === 'string' && typeof req.query.by === 'string')
     {
+        req.query.said = req.query.said.trim();
+        req.query.by = req.query.by.trim();
+
         if(req.query.said.length && req.query.by.length)
         {
             chat.emit
             (
                 'someone-said-something',
-                xssFilters.inHTMLData(req.query.by.trim()),
+                xssFilters.inHTMLData
+                (
+                    req.query.by.length < 10 ?
+                        req.query.by :
+                        req.query.by.substring(0, 10)
+                ),
                 xssFilters.inHTMLData(req.query.said.trim())
             );
         }

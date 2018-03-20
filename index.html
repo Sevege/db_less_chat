@@ -4,7 +4,11 @@
 </head>
 <body>
     <input type='text' id='by' placeholder='Choose nick, press enter' />
-    <p style='position: absolute; top : 0; right: 0;' id='u_r'></p>
+    <p
+        id='u_r'
+        style='position: absolute; top : 0; right: 0.5%;'
+        title='# of people who recieved your last non-empty message (including you)' >
+    </p>
     <div id='chat' style='display: none'>
         <span id='nick'></span>:&nbsp;
         <input type='text' id='said' placeholder='type something, press enter'/>
@@ -53,7 +57,12 @@
             {
                 by.setAttribute('disabled', 'true');
                 by.setAttribute('type', 'hidden');
-                nick.innerHTML = by.value || 'anon';
+                nick.innerHTML =
+                (
+                    by.value.trim().length < 10 ?
+                        by.value.trim() :
+                        by.value.trim().substring(0, 10)
+                ) || 'anon';
                 chat.removeAttribute('style');
             }
         });

@@ -1,0 +1,1 @@
+// global.max_emit to GUID will use too much memory ?
