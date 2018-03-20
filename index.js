@@ -6,15 +6,11 @@ let chat = new (require('events'))();
 let index = {}; index.html = require('path').join(__dirname, 'index.html');
 
 global.max_emit = 0; // TOFIX: can run out if server runs too long with too many user
-global.num_of_current_user = 0;
 
 chat.on('someone-said-something', (by, said) =>
 {
-    global.num_of_current_user = 0;
-
     for(let i = 1; i <= global.max_emit; ++i) chat.emit(String(i), by, said);
-
-    console.info('Current number of user:', global.num_of_current_user);
+    // console.info('Current number of user:', chat.eventNames().length - 1);
 });
 
 app.get('/', (req, res) =>
@@ -48,8 +44,18 @@ app.get('/data', (req, res) =>
 
     let event_listener = (by, said) =>
     {
-        ++global.num_of_current_user;
-        res.write(`data: ${JSON.stringify({ said: said, by : by })}\n\n`);
+        res.write
+        (
+            `data: ${
+            JSON.stringify
+            (
+                {
+                    said: said,
+                    by : by,
+                    users_recieving : chat.eventNames().length-1
+                }
+            )}\n\n`
+        );
     }
 
     chat.on(event_name, event_listener);
