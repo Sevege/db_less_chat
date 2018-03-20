@@ -1,9 +1,9 @@
-const app  = require('express')();
-const path = require('path');
+const app        = require('express')();
+const xssFilters = require('xss-filters');
 
 let chat = new (require('events'))();
 
-let index = {}; index.html = path.join(__dirname, 'index.html');
+let index = {}; index.html = require('path').join(__dirname, 'index.html');
 
 global.max_emit = 0; // TOFIX: can run out if server runs too long with too many user
 global.num_of_current_user = 0;
@@ -21,7 +21,16 @@ app.get('/', (req, res) =>
 {
     if(typeof req.query.said === 'string' && typeof req.query.by === 'string')
     {
-        chat.emit('someone-said-something', req.query.by, req.query.said);
+        if(req.query.said.length && req.query.by.length)
+        {
+            chat.emit
+            (
+                'someone-said-something',
+                xssFilters.inHTMLData(req.query.by.trim()),
+                xssFilters.inHTMLData(req.query.said.trim())
+            );
+        }
+
         return res.send('');
     }
     else

@@ -9,6 +9,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "express": "^4.16.2"
+    "express": "^4.16.2",
+    "xss-filters": "^1.2.7"
   }
 }
