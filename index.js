@@ -5,7 +5,9 @@ let chat = new (require('events'))();
 
 let index = {}; index.html = require('path').join(__dirname, 'index.html');
 
-global.max_emit = 0; // TOFIX: can run out if server runs too long with too many user
+global.max_emit = 0;
+// NOTE: After more than Number.MAX_SAFE_INTEGER or 9007199254740991 user in total at
+// some point connects to server, server will need to be re-started
 
 chat.on('someone-said-something', (by, said) =>
 {
@@ -57,7 +59,7 @@ app.get('/data', (req, res) =>
             JSON.stringify
             (
                 {
-                    said: said,
+                    said : said,
                     by : by,
                     users_recieving : chat.eventNames().length-1
                 }
