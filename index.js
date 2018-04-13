@@ -80,6 +80,7 @@ const html =
             let b = document.createElement('b');
             b.innerHTML = data.by;
             let p = document.createElement('p');
+            p.setAttribute('title', new Date().toLocaleString());
             let t = document.createTextNode(': ' + data.said);
             p.appendChild(b);
             p.appendChild(t);
