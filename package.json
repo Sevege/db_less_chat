@@ -1,15 +1,12 @@
 {
-  "name": "server-sent-event-chat-room",
+  "name": "db_less_chat",
   "version": "0.0.1",
-  "description": "",
+  "description": "simple database-less dependency-less multi-user chat application",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "author": "",
   "license": "UNLICENSED",
-  "dependencies": {
-    "express": "^4.16.2",
-    "xss-filters": "^1.2.7"
-  }
+  "dependencies": {}
 }

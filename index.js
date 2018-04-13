@@ -1,77 +1,203 @@
-const app        = require('express')();
-const xssFilters = require('xss-filters');
+const html =
+`<!doctype html>
+<head>
+    <meta charset='UTF-8'>
+    <title>Chat</title>
+</head>
+<body>
+    <input type='text' id='by' placeholder='Choose nick, press enter' />
+    <p
+        id='u_r'
+        style='position: absolute; top : 0; right: 0.5%;'
+        title='# of people who recieved the last non-empty message (including you)' >
+    </p>
+    <div id='chat' style='display: none'>
+        <span id='nick'></span>:&nbsp;
+        <input type='text' id='said' placeholder='type something, press enter'/>
+        <div id='room'></div>
+    </div>
+    <script>
+        let u_r = document.getElementById('u_r');
+        let room = document.getElementById('room');
+        let said = document.getElementById('said');
+        let by = document.getElementById('by');
+        let nick = document.getElementById('nick');
+        let chat = document.getElementById('chat');
+        let xhr = new XMLHttpRequest();
 
-let chat = new (require('events'))();
+        function formatParams( params )
+        {
+            // https://stackoverflow.com/a/31713191
+            return "?" + Object
+                .keys(params)
+                .map(function(key)
+                {
+                    return key+"="+encodeURIComponent(params[key])
+                })
+                .join("&")
+        }
 
-let index = {}; index.html = require('path').join(__dirname, 'index.html');
+        said.addEventListener('keypress', (event) =>
+        {
+            if(event.keyCode === 13)
+            {
+                xhr.open
+                (
+                    'GET',
+                    '/' + formatParams({ by : by.value || 'anon', said: said.value}),
+                    true
+                );
+                xhr.send();
+                said.value = '';
+                return true;
+            }
+        });
+
+        by.addEventListener('keyup', (event) =>
+        {
+            if(event.keyCode === 13)
+            {
+                by.setAttribute('disabled', 'true');
+                by.setAttribute('type', 'hidden');
+                nick.innerHTML =
+                (
+                    by.value.trim().length < 10 ?
+                        by.value.trim()
+                            .replace(/</g, 'ᐸ')
+                            .replace(/>/g, 'ᐳ')
+                        :
+                        by.value.trim().substring(0, 10)
+                            .replace(/</g, 'ᐸ')
+                            .replace(/>/g, 'ᐳ')
+                ) || 'anon';
+                chat.removeAttribute('style');
+            }
+        });
+
+        (new EventSource('data')).onmessage = function(event)
+        {
+            let data = JSON.parse(event.data);
+            let b = document.createElement('b');
+            b.innerHTML = data.by;
+            let p = document.createElement('p');
+            let t = document.createTextNode(': ' + data.said);
+            p.appendChild(b);
+            p.appendChild(t);
+            room.insertBefore(p, room.firstChild);
+            u_r.innerHTML = data.users_recieving;
+        };
+    </script>
+</body>
+`;
+
+const chat = new (require('events'))();
+const URL  = require('url').URL;
+
 
 global.max_emit = 0;
-// NOTE: After more than Number.MAX_SAFE_INTEGER or 9007199254740991 user in total at
-// some point connects to server, server will need to be re-started
 
 chat.on('someone-said-something', (by, said) =>
 {
     for(let i = 1; i <= global.max_emit; ++i) chat.emit(String(i), by, said);
 });
 
-app.get('/', (req, res) =>
+require('http').createServer((req, res) =>
 {
-    if(typeof req.query.said === 'string' && typeof req.query.by === 'string')
+    if(req.method !== 'GET')
     {
-        req.query.said = req.query.said.trim();
-        req.query.by = req.query.by.trim();
+        res.statusCode = 404;
 
-        if(req.query.said.length && req.query.by.length)
+        res.setHeader('Content-Length', Buffer.byteLength('404 PAGE NOT FOUND'));
+        res.setHeader('Content-Type', 'text/plain');
+
+        res.write('404 PAGE NOT FOUND');
+        res.end();
+    }
+    else if(req.url.match(/\/\?by=.+&said=.+/) !== null)
+    {
+        let said = new URL('http://www.example.com'+req.url.trim())
+                .searchParams.get('said');
+        let by   = new URL('http://www.example.com'+req.url.trim())
+                .searchParams.get('by');
+
+        if
+        (
+            typeof said === 'string' && said.length &&
+            typeof by   === 'string' && by.length
+        )
         {
             chat.emit
             (
                 'someone-said-something',
-                xssFilters.inHTMLData
+                (by.length < 10 ? by : by.substring(0, 10))
+                    .replace(/</g, 'ᐸ')
+                    .replace(/>/g, 'ᐳ'),
+                said
+                    .replace(/</g, 'ᐸ')
+                    .replace(/>/g, 'ᐳ')
+            );
+        }
+        else
+        {
+            res.statusCode = 400;
+        }
+
+        res.end();
+    }
+    else if(req.url === '/data')
+    {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Cache-Control', 'no-cache');
+
+        let event_name = String(++global.max_emit);
+
+        let event_listener = (by, said) =>
+        {
+            res.write
+            (
+                `data: ${
+                JSON.stringify
                 (
-                    req.query.by.length < 10 ?
-                        req.query.by :
-                        req.query.by.substring(0, 10)
-                ),
-                xssFilters.inHTMLData(req.query.said.trim())
+                    {
+                        said : said,
+                        by : by,
+                        users_recieving : chat.eventNames().length-1
+                    }
+                )}\n\n`
             );
         }
 
-        return res.send('');
+        chat.on(event_name, event_listener);
+        res.on('close', () => chat.removeListener(event_name, event_listener));
+    }
+    else if(req.url === '/')
+    {
+        res.statusCode = 200;
+
+        res.setHeader('Content-Length', Buffer.byteLength(html));
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Connection', 'close');
+
+        res.write(html);
+        res.end();
     }
     else
     {
-        return res.sendFile(index.html);
+        res.statusCode = 404;
+
+        res.setHeader('Content-Length', Buffer.byteLength('404 PAGE NOT FOUND'));
+        res.setHeader('Content-Type', 'text/plain');
+
+        res.write('404 PAGE NOT FOUND');
+        res.end();
     }
-});
-
-app.get('/data', (req, res) =>
+})
+.listen(process.env.PORT || '9001', () =>
 {
-    res.header('Content-Type', 'text/event-stream');
-    res.header('Cache-Control', 'no-cache');
-
-    let event_name = String(++global.max_emit);
-
-    let event_listener = (by, said) =>
-    {
-        res.write
-        (
-            `data: ${
-            JSON.stringify
-            (
-                {
-                    said : said,
-                    by : by,
-                    users_recieving : chat.eventNames().length-1
-                }
-            )}\n\n`
-        );
-    }
-
-    chat.on(event_name, event_listener);
-    res.on('close', () => chat.removeListener(event_name, event_listener));
-});
-
-const server = app.listen(process.env.PORT || '9001', () =>
-{
-    console.log('Server started listening on', server.address());
+    console.log
+    (
+        'Server started listening on',
+        process.env.PORT ? process.env.PORT : '9001'
+    );
 });

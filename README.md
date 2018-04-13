@@ -15,3 +15,4 @@ This uses HTML5 Server-Sent Events.
 + Inputs are XSS sanitizatized before pushing to user
 + After any message sent, top right shows number of user recieving that message
 + Code is easy to look over
++ 0 dependency
