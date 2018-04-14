@@ -17,76 +17,66 @@ const html =
         <div id='room'></div>
     </div>
     <script>
-        let u_r = document.getElementById('u_r');
-        let room = document.getElementById('room');
-        let said = document.getElementById('said');
-        let by = document.getElementById('by');
-        let nick = document.getElementById('nick');
-        let chat = document.getElementById('chat');
-        let xhr = new XMLHttpRequest();
-
-        function formatParams( params )
-        {
-            // https://stackoverflow.com/a/31713191
-            return "?" + Object
-                .keys(params)
-                .map(function(key)
-                {
-                    return key+"="+encodeURIComponent(params[key])
-                })
-                .join("&")
-        }
-
-        said.addEventListener('keypress', (event) =>
-        {
-            if(event.keyCode === 13)
-            {
-                xhr.open
-                (
-                    'GET',
-                    '/' + formatParams({ by : by.value || 'anon', said: said.value}),
-                    true
-                );
-                xhr.send();
-                said.value = '';
-                return true;
-            }
-        });
-
-        by.addEventListener('keyup', (event) =>
-        {
-            if(event.keyCode === 13)
-            {
-                by.setAttribute('disabled', 'true');
-                by.setAttribute('type', 'hidden');
-                nick.innerHTML =
-                (
-                    by.value.trim().length < 10 ?
-                        by.value.trim()
-                            .replace(/</g, 'ᐸ')
-                            .replace(/>/g, 'ᐳ')
-                        :
-                        by.value.trim().substring(0, 10)
-                            .replace(/</g, 'ᐸ')
-                            .replace(/>/g, 'ᐳ')
-                ) || 'anon';
-                chat.removeAttribute('style');
-            }
-        });
-
-        (new EventSource('data')).onmessage = function(event)
-        {
-            let data = JSON.parse(event.data);
-            let b = document.createElement('b');
-            b.innerHTML = data.by;
-            let p = document.createElement('p');
-            p.setAttribute('title', new Date().toLocaleString());
-            let t = document.createTextNode(': ' + data.said);
-            p.appendChild(b);
-            p.appendChild(t);
-            room.insertBefore(p, room.firstChild);
-            u_r.innerHTML = data.users_recieving;
-        };
+    "use strict";
+    var u_r = document.getElementById("u_r"),
+    room = document.getElementById("room"),
+    said = document.getElementById("said"),
+    by = document.getElementById("by"),
+    nick = document.getElementById("nick"),
+    chat = document.getElementById("chat"),
+    xhr = new XMLHttpRequest();
+    function formatParams(a) {
+    return (
+        "?" +
+        Object.keys(a)
+        .map(function(c) {
+            return c + "=" + encodeURIComponent(a[c]);
+        })
+        .join("&")
+    );
+    }
+    said.addEventListener("keypress", function(a) {
+    if (13 === a.keyCode)
+        return (
+        xhr.open(
+            "GET",
+            "/" + formatParams({ by: by.value || "anon", said: said.value }),
+            !0
+        ),
+        xhr.send(),
+        (said.value = ""),
+        !0
+        );
+    }),
+    by.addEventListener("keyup", function(a) {
+        13 === a.keyCode &&
+        (by.setAttribute("disabled", "true"),
+        by.setAttribute("type", "hidden"),
+        (nick.innerHTML =
+            (10 > by.value.trim().length
+            ? by.value
+                .trim()
+                .replace(/</g, "\u1438")
+                .replace(/>/g, "\u1433")
+            : by.value
+                .trim()
+                .substring(0, 10)
+                .replace(/</g, "\u1438")
+                .replace(/>/g, "\u1433")) || "anon"),
+        chat.removeAttribute("style"));
+    }),
+    (new EventSource("data").onmessage = function(a) {
+        var c = JSON.parse(a.data),
+        d = document.createElement("b");
+        d.innerHTML = c.by;
+        var e = document.createElement("p");
+        e.setAttribute("title", new Date().toLocaleString());
+        var f = document.createTextNode(": " + c.said);
+        e.appendChild(d),
+        e.appendChild(f),
+        room.insertBefore(e, room.firstChild),
+        (u_r.innerHTML = c.users_recieving);
+    });
     </script>
 </body>
 `;
@@ -202,3 +192,77 @@ require('http').createServer((req, res) =>
         process.env.PORT ? process.env.PORT : '9001'
     );
 });
+
+
+/*
+        let u_r = document.getElementById('u_r');
+        let room = document.getElementById('room');
+        let said = document.getElementById('said');
+        let by = document.getElementById('by');
+        let nick = document.getElementById('nick');
+        let chat = document.getElementById('chat');
+        let xhr = new XMLHttpRequest();
+
+        function formatParams( params )
+        {
+            // https://stackoverflow.com/a/31713191
+            return "?" + Object
+                .keys(params)
+                .map(function(key)
+                {
+                    return key+"="+encodeURIComponent(params[key])
+                })
+                .join("&")
+        }
+
+        said.addEventListener('keypress', (event) =>
+        {
+            if(event.keyCode === 13)
+            {
+                xhr.open
+                (
+                    'GET',
+                    '/' + formatParams({ by : by.value || 'anon', said: said.value}),
+                    true
+                );
+                xhr.send();
+                said.value = '';
+                return true;
+            }
+        });
+
+        by.addEventListener('keyup', (event) =>
+        {
+            if(event.keyCode === 13)
+            {
+                by.setAttribute('disabled', 'true');
+                by.setAttribute('type', 'hidden');
+                nick.innerHTML =
+                (
+                    by.value.trim().length < 10 ?
+                        by.value.trim()
+                            .replace(/</g, 'ᐸ')
+                            .replace(/>/g, 'ᐳ')
+                        :
+                        by.value.trim().substring(0, 10)
+                            .replace(/</g, 'ᐸ')
+                            .replace(/>/g, 'ᐳ')
+                ) || 'anon';
+                chat.removeAttribute('style');
+            }
+        });
+
+        (new EventSource('data')).onmessage = function(event)
+        {
+            let data = JSON.parse(event.data);
+            let b = document.createElement('b');
+            b.innerHTML = data.by;
+            let p = document.createElement('p');
+            p.setAttribute('title', new Date().toLocaleString());
+            let t = document.createTextNode(': ' + data.said);
+            p.appendChild(b);
+            p.appendChild(t);
+            room.insertBefore(p, room.firstChild);
+            u_r.innerHTML = data.users_recieving;
+        };
+ */
