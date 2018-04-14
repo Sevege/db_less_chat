@@ -17,69 +17,68 @@ const html =
         <div id='room'></div>
     </div>
     <script>
-    "use strict";
-    var u_r = document.getElementById("u_r"),
-    room = document.getElementById("room"),
-    said = document.getElementById("said"),
-    by = document.getElementById("by"),
-    nick = document.getElementById("nick"),
-    chat = document.getElementById("chat"),
-    xhr = new XMLHttpRequest();
-    function formatParams(a) {
-    return (
-        "?" +
-        Object.keys(a)
-        .map(function(c) {
-            return c + "=" + encodeURIComponent(a[c]);
-        })
-        .join("&")
-    );
-    }
-    said.addEventListener("keypress", function(a) {
-    if (13 === a.keyCode)
+        "use strict";
+        var u_r = document.getElementById("u_r"),
+        room = document.getElementById("room"),
+        said = document.getElementById("said"),
+        by = document.getElementById("by"),
+        nick = document.getElementById("nick"),
+        chat = document.getElementById("chat"),
+        xhr = new XMLHttpRequest();
+        function formatParams(a) {
         return (
-        xhr.open(
-            "GET",
-            "/" + formatParams({ by: by.value || "anon", said: said.value }),
-            !0
-        ),
-        xhr.send(),
-        (said.value = ""),
-        !0
+            "?" +
+            Object.keys(a)
+            .map(function(c) {
+                return c + "=" + encodeURIComponent(a[c]);
+            })
+            .join("&")
         );
-    }),
-    by.addEventListener("keyup", function(a) {
-        13 === a.keyCode &&
-        (by.setAttribute("disabled", "true"),
-        by.setAttribute("type", "hidden"),
-        (nick.innerHTML =
-            (10 > by.value.trim().length
-            ? by.value
-                .trim()
-                .replace(/</g, "\u1438")
-                .replace(/>/g, "\u1433")
-            : by.value
-                .trim()
-                .substring(0, 10)
-                .replace(/</g, "\u1438")
-                .replace(/>/g, "\u1433")) || "anon"),
-        chat.removeAttribute("style"));
-    }),
-    (new EventSource("data").onmessage = function(a) {
-        var c = JSON.parse(a.data),
-        d = document.createElement("b");
-        d.innerHTML = c.by;
-        var e = document.createElement("p");
-        e.setAttribute("title", new Date().toLocaleString());
-        var f = document.createTextNode(": " + c.said);
-        e.appendChild(d),
-        e.appendChild(f),
-        room.insertBefore(e, room.firstChild),
-        (u_r.innerHTML = c.users_recieving);
-    });
+        }
+        said.addEventListener("keypress", function(a) {
+        if (13 === a.keyCode)
+            return (
+            xhr.open(
+                "GET",
+                "/" + formatParams({ by: by.value || "anon", said: said.value }),
+                !0
+            ),
+            xhr.send(),
+            (said.value = ""),
+            !0
+            );
+        }),
+        by.addEventListener("keyup", function(a) {
+            13 === a.keyCode &&
+            (by.setAttribute("disabled", "true"),
+            by.setAttribute("type", "hidden"),
+            (nick.innerHTML =
+                (10 > by.value.trim().length
+                ? by.value
+                    .trim()
+                    .replace(/</g, "\u1438")
+                    .replace(/>/g, "\u1433")
+                : by.value
+                    .trim()
+                    .substring(0, 10)
+                    .replace(/</g, "\u1438")
+                    .replace(/>/g, "\u1433")) || "anon"),
+            chat.removeAttribute("style"));
+        }),
+        (new EventSource("data").onmessage = function(a) {
+            var c = JSON.parse(a.data),
+            d = document.createElement("b");
+            d.innerHTML = c.by;
+            var e = document.createElement("p");
+            e.setAttribute("title", new Date().toLocaleString());
+            var f = document.createTextNode(": " + c.said);
+            e.appendChild(d),
+            e.appendChild(f),
+            room.insertBefore(e, room.firstChild),
+            (u_r.innerHTML = c.users_recieving);
+        });
     </script>
-</body>
-`;
+</body>`;
 
 const chat = new (require('events'))();
 const URL  = require('url').URL;
@@ -171,6 +170,16 @@ require('http').createServer((req, res) =>
         res.setHeader('Connection', 'close');
 
         res.write(html);
+        res.end();
+    }
+    else if(req.url === '/robots.txt')
+    {
+        res.statusCode = 200;
+        res.setHeader(
+            'Content-Length',
+            Buffer.byteLength(`User-agent: *\nDisallow: /`));
+        res.setHeader('Content-Type', 'text/plain');
+        res.write(`User-agent: *\nDisallow: /`);
         res.end();
     }
     else
